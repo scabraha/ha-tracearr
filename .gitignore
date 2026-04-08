@@ -29,6 +29,7 @@ Thumbs.db
 htmlcov/
 .tox/
 
+
 # Distribution
 *.tar.gz
 *.whl

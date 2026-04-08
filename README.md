@@ -59,9 +59,9 @@ This integration exposes sensors similar to the [Tautulli integration](https://w
 | **Transcodes** | Number of streams being transcoded | Streams | ❌ |
 | **Direct plays** | Number of direct play streams | Streams | ❌ |
 | **Direct streams** | Number of direct streams | Streams | ❌ |
-| **Total bandwidth** | Total bandwidth usage | kbit | ✅ |
-| **LAN bandwidth** | Local network bandwidth usage | kbit | ❌ |
-| **WAN bandwidth** | Remote network bandwidth usage | kbit | ❌ |
+| **Total bandwidth** | Total bandwidth usage | kbit/s | ✅ |
+| **LAN bandwidth** | Local network bandwidth usage | kbit/s | ❌ |
+| **WAN bandwidth** | Remote network bandwidth usage | kbit/s | ❌ |
 | **Total users** | Number of tracked users | Users | ✅ |
 | **Active violations** | Sum of all user violations | Violations | ✅ |
 | **Connected servers** | Number of connected media servers | Servers | ✅ |

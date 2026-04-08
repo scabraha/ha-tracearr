@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory, UnitOfInformation
+from homeassistant.const import EntityCategory, UnitOfDataRate
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
@@ -71,8 +71,8 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="total_bandwidth",
         translation_key="total_bandwidth",
         entity_category=EntityCategory.DIAGNOSTIC,
-        native_unit_of_measurement=UnitOfInformation.KILOBITS,
-        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
+        device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.total_bandwidth
         if coord.activity
@@ -82,8 +82,8 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="lan_bandwidth",
         translation_key="lan_bandwidth",
         entity_category=EntityCategory.DIAGNOSTIC,
-        native_unit_of_measurement=UnitOfInformation.KILOBITS,
-        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
+        device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         value_fn=lambda coord: coord.activity.lan_bandwidth
@@ -94,8 +94,8 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="wan_bandwidth",
         translation_key="wan_bandwidth",
         entity_category=EntityCategory.DIAGNOSTIC,
-        native_unit_of_measurement=UnitOfInformation.KILOBITS,
-        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
+        device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
         value_fn=lambda coord: coord.activity.wan_bandwidth

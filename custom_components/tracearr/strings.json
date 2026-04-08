@@ -1,0 +1,70 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "This Tracearr instance is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Tracearr instance. Please check the host URL.",
+      "invalid_auth": "Invalid API key. Please check your credentials.",
+      "unknown": "An unexpected error occurred."
+    },
+    "step": {
+      "reauth_confirm": {
+        "data": {
+          "api_key": "API Key"
+        },
+        "description": "Please enter a new API key for your Tracearr instance. You can find this under Settings → API in the Tracearr web UI.",
+        "title": "Re-authenticate Tracearr"
+      },
+      "user": {
+        "data": {
+          "host": "Host",
+          "api_key": "API Key",
+          "verify_ssl": "Verify SSL certificate"
+        },
+        "description": "Enter the URL and API key for your Tracearr instance. The API key can be found under Settings → API in the Tracearr web UI."
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active_streams": {
+        "name": "Active streams"
+      },
+      "transcode_count": {
+        "name": "Transcodes"
+      },
+      "direct_play_count": {
+        "name": "Direct plays"
+      },
+      "direct_stream_count": {
+        "name": "Direct streams"
+      },
+      "total_bandwidth": {
+        "name": "Total bandwidth"
+      },
+      "lan_bandwidth": {
+        "name": "LAN bandwidth"
+      },
+      "wan_bandwidth": {
+        "name": "WAN bandwidth"
+      },
+      "total_users": {
+        "name": "Total users"
+      },
+      "active_violations": {
+        "name": "Active violations"
+      },
+      "connected_servers": {
+        "name": "Connected servers"
+      },
+      "total_movies": {
+        "name": "Total movies"
+      },
+      "total_shows": {
+        "name": "Total shows"
+      }
+    }
+  }
+}

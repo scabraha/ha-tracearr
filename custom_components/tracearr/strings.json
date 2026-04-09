@@ -44,12 +44,6 @@
       "total_bandwidth": {
         "name": "Total bandwidth"
       },
-      "lan_bandwidth": {
-        "name": "LAN bandwidth"
-      },
-      "wan_bandwidth": {
-        "name": "WAN bandwidth"
-      },
       "total_users": {
         "name": "Total users"
       },
@@ -58,12 +52,6 @@
       },
       "connected_servers": {
         "name": "Connected servers"
-      },
-      "total_movies": {
-        "name": "Total movies"
-      },
-      "total_shows": {
-        "name": "Total shows"
       }
     }
   }

@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory, UnitOfDataRate
+from homeassistant.const import UnitOfDataRate
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
@@ -40,9 +40,8 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="transcode_count",
         translation_key="transcode_count",
-        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement="Streams",
-        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.transcode_count
         if coord.activity
         else None,
@@ -50,9 +49,8 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="direct_play_count",
         translation_key="direct_play_count",
-        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement="Streams",
-        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.direct_play_count
         if coord.activity
         else None,
@@ -60,9 +58,8 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="direct_stream_count",
         translation_key="direct_stream_count",
-        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement="Streams",
-        entity_registry_enabled_default=False,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.direct_stream_count
         if coord.activity
         else None,
@@ -70,35 +67,10 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="total_bandwidth",
         translation_key="total_bandwidth",
-        entity_category=EntityCategory.DIAGNOSTIC,
         native_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
         device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.total_bandwidth
-        if coord.activity
-        else None,
-    ),
-    TracearrSensorEntityDescription(
-        key="lan_bandwidth",
-        translation_key="lan_bandwidth",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        native_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
-        device_class=SensorDeviceClass.DATA_RATE,
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
-        value_fn=lambda coord: coord.activity.lan_bandwidth
-        if coord.activity
-        else None,
-    ),
-    TracearrSensorEntityDescription(
-        key="wan_bandwidth",
-        translation_key="wan_bandwidth",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        native_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
-        device_class=SensorDeviceClass.DATA_RATE,
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
-        value_fn=lambda coord: coord.activity.wan_bandwidth
         if coord.activity
         else None,
     ),
@@ -125,26 +97,6 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: len(coord.servers)
         if coord.servers is not None
-        else None,
-    ),
-    TracearrSensorEntityDescription(
-        key="total_movies",
-        translation_key="total_movies",
-        native_unit_of_measurement="Movies",
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
-        value_fn=lambda coord: coord.library.total_movies
-        if coord.library
-        else None,
-    ),
-    TracearrSensorEntityDescription(
-        key="total_shows",
-        translation_key="total_shows",
-        native_unit_of_measurement="Shows",
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=False,
-        value_fn=lambda coord: coord.library.total_shows
-        if coord.library
         else None,
     ),
 )

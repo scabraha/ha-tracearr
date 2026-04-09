@@ -43,9 +43,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         icon="mdi:play-network",
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda coord: coord.activity.stream_count
-        if coord.activity
-        else None,
+        value_fn=lambda coord: coord.activity.stream_count if coord.activity else None,
     ),
     TracearrSensorEntityDescription(
         key="transcode_count",
@@ -55,9 +53,9 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
-        value_fn=lambda coord: coord.activity.transcode_count
-        if coord.activity
-        else None,
+        value_fn=lambda coord: (
+            coord.activity.transcode_count if coord.activity else None
+        ),
     ),
     TracearrSensorEntityDescription(
         key="direct_play_count",
@@ -67,9 +65,9 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
-        value_fn=lambda coord: coord.activity.direct_play_count
-        if coord.activity
-        else None,
+        value_fn=lambda coord: (
+            coord.activity.direct_play_count if coord.activity else None
+        ),
     ),
     TracearrSensorEntityDescription(
         key="direct_stream_count",
@@ -79,9 +77,9 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
-        value_fn=lambda coord: coord.activity.direct_stream_count
-        if coord.activity
-        else None,
+        value_fn=lambda coord: (
+            coord.activity.direct_stream_count if coord.activity else None
+        ),
     ),
     TracearrSensorEntityDescription(
         key="total_bandwidth",
@@ -91,9 +89,9 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
         device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda coord: coord.activity.total_bandwidth
-        if coord.activity
-        else None,
+        value_fn=lambda coord: (
+            coord.activity.total_bandwidth if coord.activity else None
+        ),
     ),
     TracearrSensorEntityDescription(
         key="total_users",
@@ -112,9 +110,9 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         icon="mdi:shield-alert",
         native_unit_of_measurement="Violations",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda coord: sum(u.violations for u in coord.users)
-        if coord.users
-        else None,
+        value_fn=lambda coord: (
+            sum(u.violations for u in coord.users) if coord.users else None
+        ),
     ),
     TracearrSensorEntityDescription(
         key="connected_servers",
@@ -124,9 +122,9 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         native_unit_of_measurement="Servers",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda coord: len(coord.servers)
-        if coord.servers is not None
-        else None,
+        value_fn=lambda coord: (
+            len(coord.servers) if coord.servers is not None else None
+        ),
     ),
 )
 

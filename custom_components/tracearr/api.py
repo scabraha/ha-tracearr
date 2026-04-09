@@ -124,9 +124,7 @@ class TracearrUser:
         """Create from a Tracearr public API user object."""
         return cls(
             user_id=str(data.get("id", "")),
-            username=str(
-                data.get("displayName", data.get("username", ""))
-            ),
+            username=str(data.get("displayName", data.get("username", ""))),
             trust_score=float(data.get("trustScore", 0.0)),
             violations=int(data.get("totalViolations", 0)),
         )
@@ -204,9 +202,7 @@ class TracearrClient:
         }
         ssl = None if self._verify_ssl else False
         try:
-            async with self._session.get(
-                url, headers=headers, ssl=ssl
-            ) as response:
+            async with self._session.get(url, headers=headers, ssl=ssl) as response:
                 if response.status == 401:
                     raise TracearrAuthenticationError("Invalid API key")
                 if response.status == 403:

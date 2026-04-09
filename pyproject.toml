@@ -1,2 +1,70 @@
+[project]
+name = "ha-tracearr"
+version = "1.0.0"
+description = "Home Assistant custom integration for Tracearr media server monitoring"
+requires-python = ">=3.12"
+readme = "README.md"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Unused imports in __init__.py
+"tests/**" = ["D"]  # Don't require docstrings in tests
+
 [tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 asyncio_mode = "auto"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "-v",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+]
+
+[tool.coverage.run]
+source = ["custom_components"]
+branch = true
+omit = [
+    "tests/*",
+    "venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "@abstractmethod",
+]
+show_missing = true
+precision = 2

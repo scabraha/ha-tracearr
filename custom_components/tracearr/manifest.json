@@ -9,5 +9,5 @@
   "issue_tracker": "https://github.com/scabraha/ha-tracearr/issues",
   "loggers": ["custom_components.tracearr"],
   "requirements": ["aiohttp>=3.8.0"],
-  "version": "1.0.0"
+  "version": "0.0.0"
 }

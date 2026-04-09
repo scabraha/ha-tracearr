@@ -41,7 +41,7 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
             logger=LOGGER,
             config_entry=config_entry,
             name=DOMAIN,
-            update_interval=timedelta(seconds=30),
+            update_interval=timedelta(seconds=10),
         )
         self.api_client = api_client
         self.activity: TracearrActivity | None = None

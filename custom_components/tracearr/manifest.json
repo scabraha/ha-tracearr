@@ -1,13 +1,19 @@
 {
   "domain": "tracearr",
   "name": "Tracearr",
-  "codeowners": ["@scabraha"],
+  "codeowners": [
+    "@scabraha"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/scabraha/ha-tracearr",
   "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/scabraha/ha-tracearr/issues",
-  "loggers": ["custom_components.tracearr"],
-  "requirements": ["aiohttp>=3.8.0"],
-  "version": "0.0.0"
+  "loggers": [
+    "custom_components.tracearr"
+  ],
+  "requirements": [
+    "aiohttp>=3.8.0"
+  ],
+  "version": "0.0.1"
 }

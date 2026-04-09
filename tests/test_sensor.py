@@ -181,6 +181,16 @@ class TestSensorValueFunctions:
         t_keys = [s.translation_key for s in SENSOR_TYPES]
         assert len(t_keys) == len(set(t_keys)), "Translation keys must be unique"
 
+    def test_all_sensors_have_explicit_name(self):
+        """Test that all sensors have an explicit name set for reliable display."""
+        for sensor in SENSOR_TYPES:
+            assert sensor.name is not None, (
+                f"Sensor '{sensor.key}' must have an explicit name"
+            )
+            assert isinstance(sensor.name, str), (
+                f"Sensor '{sensor.key}' name must be a string"
+            )
+
     def test_expected_sensor_count(self):
         """Test that we have the expected number of sensors."""
         assert len(SENSOR_TYPES) == 8

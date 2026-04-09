@@ -31,6 +31,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="active_streams",
         translation_key="active_streams",
+        name="Active streams",
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.stream_count
@@ -40,6 +41,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="transcode_count",
         translation_key="transcode_count",
+        name="Transcodes",
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.transcode_count
@@ -49,6 +51,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="direct_play_count",
         translation_key="direct_play_count",
+        name="Direct plays",
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.direct_play_count
@@ -58,6 +61,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="direct_stream_count",
         translation_key="direct_stream_count",
+        name="Direct streams",
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.direct_stream_count
@@ -67,6 +71,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="total_bandwidth",
         translation_key="total_bandwidth",
+        name="Total bandwidth",
         native_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
         device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -77,6 +82,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="total_users",
         translation_key="total_users",
+        name="Total users",
         native_unit_of_measurement="Users",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: len(coord.users) if coord.users is not None else None,
@@ -84,6 +90,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="active_violations",
         translation_key="active_violations",
+        name="Active violations",
         native_unit_of_measurement="Violations",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: sum(u.violations for u in coord.users)
@@ -93,6 +100,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     TracearrSensorEntityDescription(
         key="connected_servers",
         translation_key="connected_servers",
+        name="Connected servers",
         native_unit_of_measurement="Servers",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: len(coord.servers)

@@ -52,6 +52,12 @@
       },
       "connected_servers": {
         "name": "Connected servers"
+      },
+      "server_status": {
+        "name": "Status"
+      },
+      "server_active_streams": {
+        "name": "Active streams"
       }
     }
   }

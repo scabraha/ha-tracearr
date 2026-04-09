@@ -1,6 +1,6 @@
 [project]
 name = "ha-tracearr"
-version = "0.0.7"
+version = "1.0.0"
 description = "Home Assistant custom integration for Tracearr media server monitoring"
 requires-python = ">=3.12"
 readme = "README.md"

@@ -74,7 +74,10 @@ class TestSensorValueFunctions:
                 server_id="s1", name="Plex", server_type="plex", status="connected"
             ),
             TracearrServer(
-                server_id="s2", name="Jellyfin", server_type="jellyfin", status="connected"
+                server_id="s2",
+                name="Jellyfin",
+                server_type="jellyfin",
+                status="connected",
             ),
         ]
 
@@ -208,9 +211,7 @@ class TestSensorValueFunctions:
             "connected_servers": "mdi:server-network",
         }
         for sensor in SENSOR_TYPES:
-            assert sensor.icon is not None, (
-                f"Sensor '{sensor.key}' must have an icon"
-            )
+            assert sensor.icon is not None, f"Sensor '{sensor.key}' must have an icon"
             assert sensor.icon == expected_icons[sensor.key], (
                 f"Sensor '{sensor.key}' has unexpected icon '{sensor.icon}'"
             )

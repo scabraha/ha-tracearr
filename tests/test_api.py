@@ -1,7 +1,7 @@
 """Tests for the Tracearr API client."""
 
-import pytest
 import aiohttp
+import pytest
 from aioresponses import aioresponses
 
 from custom_components.tracearr.api import (
@@ -16,7 +16,6 @@ from custom_components.tracearr.api import (
     TracearrStatus,
     TracearrUser,
 )
-
 
 HOST = "http://tracearr.local:8080"
 API_KEY = "trr_pub_test-key-123"

@@ -5,9 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-import aiohttp
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_VERIFY_SSL
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -44,9 +42,7 @@ class TracearrConfigFlow(ConfigFlow, domain=DOMAIN):
         user_input = user_input or {}
         data_schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_HOST, default=user_input.get(CONF_HOST, "")
-                ): str,
+                vol.Required(CONF_HOST, default=user_input.get(CONF_HOST, "")): str,
                 vol.Required(
                     CONF_API_KEY, default=user_input.get(CONF_API_KEY, "")
                 ): str,

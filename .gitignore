@@ -1,17 +1,20 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Distribution / packaging
+build/
+dist/
 *.egg-info/
 *.egg
-dist/
-build/
 .eggs/
 
 # Virtual environments
 venv/
 .venv/
 env/
+ENV/
 
 # IDE
 .idea/
@@ -26,10 +29,24 @@ Thumbs.db
 # Testing
 .pytest_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
 .tox/
+.nox/
 
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# Ruff
+.ruff_cache/
 
 # Distribution
 *.tar.gz
 *.whl
+
+# Pre-commit
+.pre-commit-cache/

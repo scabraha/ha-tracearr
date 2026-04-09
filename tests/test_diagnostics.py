@@ -1,8 +1,6 @@
 """Tests for the Tracearr diagnostics platform."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
+from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.tracearr.api import (
     TracearrActivity,

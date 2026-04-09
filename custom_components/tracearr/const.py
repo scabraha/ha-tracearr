@@ -1,7 +1,10 @@
 """Constants for the Tracearr integration."""
 
-from logging import Logger, getLogger
+from __future__ import annotations
 
-DOMAIN = "tracearr"
-DEFAULT_NAME = "Tracearr"
-LOGGER: Logger = getLogger(__package__)
+from logging import Logger, getLogger
+from typing import Final
+
+DOMAIN: Final = "tracearr"
+DEFAULT_NAME: Final = "Tracearr"
+LOGGER: Final[Logger] = getLogger(__package__)

@@ -194,3 +194,51 @@ class TestSensorValueFunctions:
     def test_expected_sensor_count(self):
         """Test that we have the expected number of sensors."""
         assert len(SENSOR_TYPES) == 8
+
+    def test_all_sensors_have_icons(self):
+        """Test that all sensors have an explicit icon set."""
+        expected_icons = {
+            "active_streams": "mdi:play-network",
+            "transcode_count": "mdi:sync",
+            "direct_play_count": "mdi:play-circle",
+            "direct_stream_count": "mdi:cast-connected",
+            "total_bandwidth": "mdi:speedometer",
+            "total_users": "mdi:account-group",
+            "active_violations": "mdi:shield-alert",
+            "connected_servers": "mdi:server-network",
+        }
+        for sensor in SENSOR_TYPES:
+            assert sensor.icon is not None, (
+                f"Sensor '{sensor.key}' must have an icon"
+            )
+            assert sensor.icon == expected_icons[sensor.key], (
+                f"Sensor '{sensor.key}' has unexpected icon '{sensor.icon}'"
+            )
+
+    def test_optional_sensors_disabled_by_default(self):
+        """Test that optional sensors are disabled by default."""
+        disabled_keys = {"transcode_count", "direct_play_count", "direct_stream_count"}
+        for sensor in SENSOR_TYPES:
+            if sensor.key in disabled_keys:
+                assert sensor.entity_registry_enabled_default is False, (
+                    f"Sensor '{sensor.key}' should be disabled by default"
+                )
+            else:
+                assert sensor.entity_registry_enabled_default is True, (
+                    f"Sensor '{sensor.key}' should be enabled by default"
+                )
+
+    def test_diagnostic_sensors_have_entity_category(self):
+        """Test that diagnostic sensors have the correct entity category."""
+        from homeassistant.const import EntityCategory
+
+        diagnostic_keys = {"total_users", "connected_servers"}
+        for sensor in SENSOR_TYPES:
+            if sensor.key in diagnostic_keys:
+                assert sensor.entity_category == EntityCategory.DIAGNOSTIC, (
+                    f"Sensor '{sensor.key}' should have DIAGNOSTIC entity category"
+                )
+            else:
+                assert sensor.entity_category is None, (
+                    f"Sensor '{sensor.key}' should not have an entity category"
+                )

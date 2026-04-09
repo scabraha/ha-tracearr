@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfDataRate
+from homeassistant.const import EntityCategory, UnitOfDataRate
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
@@ -32,6 +32,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="active_streams",
         translation_key="active_streams",
         name="Active streams",
+        icon="mdi:play-network",
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: coord.activity.stream_count
@@ -42,8 +43,10 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="transcode_count",
         translation_key="transcode_count",
         name="Transcodes",
+        icon="mdi:sync",
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
         value_fn=lambda coord: coord.activity.transcode_count
         if coord.activity
         else None,
@@ -52,8 +55,10 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="direct_play_count",
         translation_key="direct_play_count",
         name="Direct plays",
+        icon="mdi:play-circle",
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
         value_fn=lambda coord: coord.activity.direct_play_count
         if coord.activity
         else None,
@@ -62,8 +67,10 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="direct_stream_count",
         translation_key="direct_stream_count",
         name="Direct streams",
+        icon="mdi:cast-connected",
         native_unit_of_measurement="Streams",
         state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
         value_fn=lambda coord: coord.activity.direct_stream_count
         if coord.activity
         else None,
@@ -72,6 +79,7 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="total_bandwidth",
         translation_key="total_bandwidth",
         name="Total bandwidth",
+        icon="mdi:speedometer",
         native_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
         device_class=SensorDeviceClass.DATA_RATE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -83,14 +91,17 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="total_users",
         translation_key="total_users",
         name="Total users",
+        icon="mdi:account-group",
         native_unit_of_measurement="Users",
         state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda coord: len(coord.users) if coord.users is not None else None,
     ),
     TracearrSensorEntityDescription(
         key="active_violations",
         translation_key="active_violations",
         name="Active violations",
+        icon="mdi:shield-alert",
         native_unit_of_measurement="Violations",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda coord: sum(u.violations for u in coord.users)
@@ -101,8 +112,10 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
         key="connected_servers",
         translation_key="connected_servers",
         name="Connected servers",
+        icon="mdi:server-network",
         native_unit_of_measurement="Servers",
         state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda coord: len(coord.servers)
         if coord.servers is not None
         else None,

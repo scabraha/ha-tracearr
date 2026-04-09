@@ -55,20 +55,31 @@ This integration exposes sensors similar to the [Tautulli integration](https://w
 
 ## Sensors
 
-| Sensor | Description | Unit | Default Enabled |
-|---|---|---|---|
-| **Active streams** | Number of currently active streams | Streams | ✅ |
-| **Transcodes** | Number of streams being transcoded | Streams | ❌ |
-| **Direct plays** | Number of direct play streams | Streams | ❌ |
-| **Direct streams** | Number of direct streams | Streams | ❌ |
-| **Total bandwidth** | Total bandwidth usage | kbit/s | ✅ |
-| **LAN bandwidth** | Local network bandwidth usage | kbit/s | ❌ |
-| **WAN bandwidth** | Remote network bandwidth usage | kbit/s | ❌ |
-| **Total users** | Number of tracked users | Users | ✅ |
-| **Active violations** | Sum of all user violations | Violations | ✅ |
-| **Connected servers** | Number of connected media servers | Servers | ✅ |
-| **Total movies** | Total movies in libraries | Movies | ❌ |
-| **Total shows** | Total TV shows in libraries | Shows | ❌ |
+| Sensor | Icon | Description | Unit | Category | Default Enabled |
+|---|---|---|---|---|---|
+| **Active streams** | `mdi:play-network` | Number of currently active streams | Streams | — | ✅ |
+| **Transcodes** | `mdi:sync` | Number of streams being transcoded | Streams | — | ❌ |
+| **Direct plays** | `mdi:play-circle` | Number of direct play streams | Streams | — | ❌ |
+| **Direct streams** | `mdi:cast-connected` | Number of direct streams | Streams | — | ❌ |
+| **Total bandwidth** | `mdi:speedometer` | Total bandwidth usage | kbit/s | — | ✅ |
+| **Active violations** | `mdi:shield-alert` | Sum of all user violations | Violations | — | ✅ |
+| **Total users** | `mdi:account-group` | Number of tracked users | Users | Diagnostic | ✅ |
+| **Connected servers** | `mdi:server-network` | Number of connected media servers | Servers | Diagnostic | ✅ |
+
+### Enabling Optional Sensors
+
+Some sensors are **disabled by default** to keep the dashboard clean (marked ❌ above). To enable them:
+
+1. Go to **Settings → Devices & Services → Tracearr**.
+2. Click on the **Tracearr** device.
+3. Under **Sensors**, click on **N entities not shown** to reveal hidden entities.
+4. Click on the disabled sensor you want to enable (e.g., **Transcodes**).
+5. Toggle the **Enabled** switch to **on**.
+6. Click **Update** — the sensor will start collecting data on the next polling cycle.
+
+### Diagnostic Sensors
+
+Sensors with the **Diagnostic** category (Total users, Connected servers) provide supplementary information about the Tracearr system. These appear under the **Diagnostic** section on the device page rather than the main controls.
 
 ### Active Streams Attributes
 

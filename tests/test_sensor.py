@@ -8,7 +8,7 @@ from custom_components.tracearr.api import (
     TracearrSessionData,
     TracearrUser,
 )
-from custom_components.tracearr.sensor import SENSOR_TYPES
+from custom_components.tracearr.sensor import SENSOR_TYPES, SERVER_SENSOR_TYPES
 
 
 class FakeCoordinator:
@@ -242,3 +242,75 @@ class TestSensorValueFunctions:
                 assert sensor.entity_category is None, (
                     f"Sensor '{sensor.key}' should not have an entity category"
                 )
+
+
+class TestServerSensorValueFunctions:
+    """Test per-server sensor value_fn callbacks."""
+
+    @pytest.fixture
+    def plex_server(self):
+        """Return a sample Plex server."""
+        return TracearrServer(
+            server_id="s1",
+            name="Plex",
+            server_type="plex",
+            status="connected",
+            active_streams=3,
+        )
+
+    @pytest.fixture
+    def jellyfin_server(self):
+        """Return a sample Jellyfin server."""
+        return TracearrServer(
+            server_id="s2",
+            name="Jellyfin",
+            server_type="jellyfin",
+            status="disconnected",
+            active_streams=0,
+        )
+
+    def _get_server_sensor(self, key):
+        """Get a server sensor description by key."""
+        for sensor in SERVER_SENSOR_TYPES:
+            if sensor.key == key:
+                return sensor
+        raise ValueError(f"Server sensor with key '{key}' not found")
+
+    def test_server_status_connected(self, plex_server):
+        """Test server_status sensor returns connected for online server."""
+        sensor = self._get_server_sensor("server_status")
+        assert sensor.server_value_fn(plex_server) == "connected"
+
+    def test_server_status_disconnected(self, jellyfin_server):
+        """Test server_status sensor returns disconnected for offline server."""
+        sensor = self._get_server_sensor("server_status")
+        assert sensor.server_value_fn(jellyfin_server) == "disconnected"
+
+    def test_server_active_streams(self, plex_server):
+        """Test server_active_streams sensor returns the stream count."""
+        sensor = self._get_server_sensor("server_active_streams")
+        assert sensor.server_value_fn(plex_server) == 3
+
+    def test_server_active_streams_zero(self, jellyfin_server):
+        """Test server_active_streams sensor returns zero for idle server."""
+        sensor = self._get_server_sensor("server_active_streams")
+        assert sensor.server_value_fn(jellyfin_server) == 0
+
+    def test_all_server_sensor_keys_unique(self):
+        """Test that all server sensor keys are unique."""
+        keys = [s.key for s in SERVER_SENSOR_TYPES]
+        assert len(keys) == len(set(keys)), "Server sensor keys must be unique"
+
+    def test_all_server_sensors_have_explicit_name(self):
+        """Test that all server sensors have an explicit name."""
+        for sensor in SERVER_SENSOR_TYPES:
+            assert sensor.name is not None, (
+                f"Server sensor '{sensor.key}' must have an explicit name"
+            )
+            assert isinstance(sensor.name, str), (
+                f"Server sensor '{sensor.key}' name must be a string"
+            )
+
+    def test_expected_server_sensor_count(self):
+        """Test that we have the expected number of per-server sensors."""
+        assert len(SERVER_SENSOR_TYPES) == 2

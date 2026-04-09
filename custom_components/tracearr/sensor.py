@@ -16,6 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
+from .api import TracearrServer
 from .coordinator import TracearrConfigEntry, TracearrDataUpdateCoordinator
 from .entity import TracearrEntity
 
@@ -25,6 +26,13 @@ class TracearrSensorEntityDescription(SensorEntityDescription):
     """Describe a Tracearr sensor."""
 
     value_fn: Callable[[TracearrDataUpdateCoordinator], StateType]
+
+
+@dataclass(frozen=True, kw_only=True)
+class TracearrServerSensorEntityDescription(SensorEntityDescription):
+    """Describe a per-server Tracearr sensor."""
+
+    server_value_fn: Callable[[TracearrServer], StateType]
 
 
 SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
@@ -122,6 +130,25 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
     ),
 )
 
+SERVER_SENSOR_TYPES: tuple[TracearrServerSensorEntityDescription, ...] = (
+    TracearrServerSensorEntityDescription(
+        key="server_status",
+        translation_key="server_status",
+        name="Status",
+        icon="mdi:server",
+        server_value_fn=lambda server: server.status,
+    ),
+    TracearrServerSensorEntityDescription(
+        key="server_active_streams",
+        translation_key="server_active_streams",
+        name="Active streams",
+        icon="mdi:play-network",
+        native_unit_of_measurement="Streams",
+        state_class=SensorStateClass.MEASUREMENT,
+        server_value_fn=lambda server: server.active_streams,
+    ),
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -130,9 +157,21 @@ async def async_setup_entry(
 ) -> None:
     """Set up Tracearr sensors based on a config entry."""
     coordinator = entry.runtime_data
-    async_add_entities(
+
+    entities: list[TracearrSensor | TracearrServerSensor] = [
         TracearrSensor(coordinator, description) for description in SENSOR_TYPES
-    )
+    ]
+
+    if coordinator.servers:
+        for server in coordinator.servers:
+            for description in SERVER_SENSOR_TYPES:
+                entities.append(
+                    TracearrServerSensor(
+                        coordinator, description, server.server_id, server.name
+                    )
+                )
+
+    async_add_entities(entities)
 
 
 class TracearrSensor(TracearrEntity, SensorEntity):
@@ -173,4 +212,51 @@ class TracearrSensor(TracearrEntity, SensorEntity):
                 }
                 for session in self.coordinator.activity.sessions
             ]
+        }
+
+
+class TracearrServerSensor(TracearrEntity, SensorEntity):
+    """Define a per-server Tracearr sensor."""
+
+    entity_description: TracearrServerSensorEntityDescription
+
+    def __init__(
+        self,
+        coordinator: TracearrDataUpdateCoordinator,
+        description: TracearrServerSensorEntityDescription,
+        server_id: str,
+        server_name: str,
+    ) -> None:
+        """Initialize the per-server sensor."""
+        super().__init__(coordinator, description)
+        self._server_id = server_id
+        entry_id = coordinator.config_entry.entry_id
+        self._attr_unique_id = f"{entry_id}_{server_id}_{description.key}"
+        self._attr_name = f"{server_name} {description.name}"
+
+    def _get_server(self) -> TracearrServer | None:
+        """Look up this sensor's server from the coordinator data."""
+        if self.coordinator.servers is None:
+            return None
+        for server in self.coordinator.servers:
+            if server.server_id == self._server_id:
+                return server
+        return None
+
+    @property
+    def native_value(self) -> StateType:
+        """Return the state of the sensor."""
+        server = self._get_server()
+        if server is None:
+            return None
+        return self.entity_description.server_value_fn(server)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str] | None:
+        """Return extra state attributes including server type."""
+        server = self._get_server()
+        if server is None:
+            return None
+        return {
+            "server_type": server.server_type,
         }

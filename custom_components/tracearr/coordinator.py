@@ -16,7 +16,6 @@ from .api import (
     TracearrAuthenticationError,
     TracearrClient,
     TracearrConnectionError,
-    TracearrLibrary,
     TracearrServer,
     TracearrUser,
 )
@@ -48,7 +47,6 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
         self.activity: TracearrActivity | None = None
         self.users: list[TracearrUser] | None = None
         self.servers: list[TracearrServer] | None = None
-        self.library: TracearrLibrary | None = None
 
     async def _async_update_data(self) -> None:
         """Get the latest data from Tracearr."""
@@ -57,12 +55,10 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
                 self.api_client.async_get_sessions(),
                 self.api_client.async_get_users(),
                 self.api_client.async_get_servers(),
-                self.api_client.async_get_library(),
             )
             self.activity = results[0]
             self.users = results[1]
             self.servers = results[2]
-            self.library = results[3]
         except TracearrConnectionError as ex:
             raise UpdateFailed(ex) from ex
         except TracearrAuthenticationError as ex:

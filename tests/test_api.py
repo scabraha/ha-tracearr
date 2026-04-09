@@ -5,12 +5,12 @@ import aiohttp
 from aioresponses import aioresponses
 
 from custom_components.tracearr.api import (
+    API_PATH_PREFIX,
     TracearrActivity,
     TracearrAuthenticationError,
     TracearrClient,
     TracearrConnectionError,
     TracearrError,
-    TracearrLibrary,
     TracearrServer,
     TracearrSessionData,
     TracearrStatus,
@@ -19,7 +19,8 @@ from custom_components.tracearr.api import (
 
 
 HOST = "http://tracearr.local:8080"
-API_KEY = "test-api-key-123"
+API_KEY = "trr_pub_test-key-123"
+BASE = f"{HOST}/{API_PATH_PREFIX}"
 
 
 @pytest.fixture
@@ -35,19 +36,18 @@ def mock_aioresponse():
 class TestTracearrSessionData:
     """Tests for TracearrSessionData."""
 
-    def test_from_dict_primary_keys(self):
-        """Test creating session data from dict with primary keys."""
+    def test_from_dict_public_api_keys(self):
+        """Test creating session data from the public API stream object."""
         data = {
-            "session_id": "abc123",
-            "user": "testuser",
-            "title": "Movie Title",
-            "media_type": "movie",
+            "id": "abc123",
+            "username": "testuser",
+            "mediaTitle": "Movie Title",
+            "mediaType": "movie",
             "state": "playing",
-            "progress": 50,
-            "quality": "1080p",
+            "progressMs": 3600000,
+            "durationMs": 7200000,
+            "resolution": "1080p",
             "device": "Chromecast",
-            "ip_address": "192.168.1.10",
-            "location": "Home",
         }
         session = TracearrSessionData.from_dict(data)
         assert session.session_id == "abc123"
@@ -55,35 +55,15 @@ class TestTracearrSessionData:
         assert session.title == "Movie Title"
         assert session.media_type == "movie"
         assert session.state == "playing"
-        assert session.progress == 50
+        assert session.progress == 50  # 3600000/7200000 * 100
         assert session.quality == "1080p"
         assert session.device == "Chromecast"
-        assert session.ip_address == "192.168.1.10"
-        assert session.location == "Home"
 
-    def test_from_dict_alternate_keys(self):
-        """Test creating session data from dict with alternate key names."""
-        data = {
-            "id": "xyz789",
-            "username": "altuser",
-            "media_title": "TV Show",
-            "type": "episode",
-            "status": "paused",
-            "progress_percent": 75,
-            "stream_quality": "4K",
-            "player": "AppleTV",
-            "ip": "10.0.0.5",
-        }
+    def test_from_dict_progress_zero_duration(self):
+        """Test progress when duration is zero."""
+        data = {"id": "s1", "progressMs": 5000, "durationMs": 0}
         session = TracearrSessionData.from_dict(data)
-        assert session.session_id == "xyz789"
-        assert session.user == "altuser"
-        assert session.title == "TV Show"
-        assert session.media_type == "episode"
-        assert session.state == "paused"
-        assert session.progress == 75
-        assert session.quality == "4K"
-        assert session.device == "AppleTV"
-        assert session.ip_address == "10.0.0.5"
+        assert session.progress == 0
 
     def test_from_dict_defaults(self):
         """Test that missing keys default properly."""
@@ -92,166 +72,149 @@ class TestTracearrSessionData:
         assert session.user == ""
         assert session.title == ""
         assert session.progress == 0
-        assert session.location == ""
 
 
 class TestTracearrActivity:
     """Tests for TracearrActivity."""
 
-    def test_from_dict_with_sessions(self):
-        """Test creating activity from dict with sessions."""
+    def test_from_dict_with_streams_response(self):
+        """Test creating activity from the /streams response shape."""
         data = {
-            "stream_count": 3,
-            "transcode_count": 1,
-            "direct_play_count": 2,
-            "direct_stream_count": 0,
-            "total_bandwidth": 5000,
-            "lan_bandwidth": 3000,
-            "wan_bandwidth": 2000,
-            "sessions": [
-                {"session_id": "1", "user": "user1", "title": "Movie 1"},
-                {"session_id": "2", "user": "user2", "title": "Show 1"},
+            "data": [
+                {
+                    "id": "s1",
+                    "username": "alice",
+                    "mediaTitle": "Movie 1",
+                    "mediaType": "movie",
+                    "state": "playing",
+                    "bitrate": 3000,
+                },
+                {
+                    "id": "s2",
+                    "username": "bob",
+                    "mediaTitle": "Show 1",
+                    "mediaType": "episode",
+                    "state": "playing",
+                    "bitrate": 2000,
+                },
             ],
-        }
-        activity = TracearrActivity.from_dict(data)
-        assert activity.stream_count == 3
-        assert activity.transcode_count == 1
-        assert activity.direct_play_count == 2
-        assert activity.direct_stream_count == 0
-        assert activity.total_bandwidth == 5000
-        assert activity.lan_bandwidth == 3000
-        assert activity.wan_bandwidth == 2000
-        assert len(activity.sessions) == 2
-        assert activity.sessions[0].user == "user1"
-
-    def test_from_dict_alternate_keys(self):
-        """Test using alternate key names."""
-        data = {
-            "total": 2,
-            "transcoding": 1,
-            "direct_play": 1,
-            "direct_stream": 0,
-            "bandwidth": 4000,
-            "streams": [
-                {"id": "1", "username": "u1"},
-            ],
+            "summary": {
+                "total": 2,
+                "transcodes": 1,
+                "directPlays": 1,
+                "directStreams": 0,
+                "totalBitrate": "5.0 Mbps",
+            },
         }
         activity = TracearrActivity.from_dict(data)
         assert activity.stream_count == 2
         assert activity.transcode_count == 1
-        assert activity.total_bandwidth == 4000
-        assert len(activity.sessions) == 1
+        assert activity.direct_play_count == 1
+        assert activity.direct_stream_count == 0
+        assert activity.total_bandwidth == 5000  # sum of bitrates
+        assert len(activity.sessions) == 2
+        assert activity.sessions[0].user == "alice"
 
     def test_from_dict_empty(self):
         """Test defaults when no data provided."""
         activity = TracearrActivity.from_dict({})
         assert activity.stream_count == 0
         assert activity.sessions == []
+        assert activity.total_bandwidth == 0
 
 
 class TestTracearrUser:
     """Tests for TracearrUser."""
 
     def test_from_dict(self):
-        """Test creating user from dict."""
+        """Test creating user from public API user object."""
         data = {
             "id": "u1",
             "username": "john",
-            "trust_score": 85.5,
-            "violations": 2,
-            "is_active": True,
+            "displayName": "John Smith",
+            "trustScore": 85.5,
+            "totalViolations": 2,
         }
         user = TracearrUser.from_dict(data)
         assert user.user_id == "u1"
-        assert user.username == "john"
+        assert user.username == "John Smith"
         assert user.trust_score == 85.5
         assert user.violations == 2
-        assert user.is_active is True
 
-    def test_from_dict_alternate_keys(self):
-        """Test using alternate key names."""
+    def test_from_dict_fallback_to_username(self):
+        """Test falling back to username when displayName is missing."""
         data = {
-            "user_id": "u2",
-            "name": "jane",
-            "violation_count": 0,
-            "active": False,
+            "id": "u2",
+            "username": "jane",
+            "trustScore": 0.0,
+            "totalViolations": 0,
         }
         user = TracearrUser.from_dict(data)
-        assert user.user_id == "u2"
         assert user.username == "jane"
+
+    def test_from_dict_defaults(self):
+        """Test defaults for empty dict."""
+        user = TracearrUser.from_dict({})
+        assert user.user_id == ""
+        assert user.username == ""
+        assert user.trust_score == 0.0
         assert user.violations == 0
-        assert user.is_active is False
 
 
 class TestTracearrServer:
     """Tests for TracearrServer."""
 
-    def test_from_dict(self):
-        """Test creating server from dict."""
+    def test_from_dict_online(self):
+        """Test creating server from /health server entry (online)."""
         data = {
             "id": "s1",
             "name": "My Plex",
             "type": "plex",
-            "status": "connected",
-            "url": "http://plex.local:32400",
+            "online": True,
+            "activeStreams": 3,
         }
         server = TracearrServer.from_dict(data)
         assert server.server_id == "s1"
         assert server.name == "My Plex"
         assert server.server_type == "plex"
         assert server.status == "connected"
-        assert server.url == "http://plex.local:32400"
+        assert server.active_streams == 3
 
-
-class TestTracearrLibrary:
-    """Tests for TracearrLibrary."""
-
-    def test_from_dict(self):
-        """Test creating library from dict."""
+    def test_from_dict_offline(self):
+        """Test creating server when offline."""
         data = {
-            "total_movies": 500,
-            "total_shows": 100,
-            "total_episodes": 5000,
-            "total_music": 200,
-            "total_storage": 2048.5,
+            "id": "s2",
+            "name": "Jellyfin",
+            "type": "jellyfin",
+            "online": False,
+            "activeStreams": 0,
         }
-        library = TracearrLibrary.from_dict(data)
-        assert library.total_movies == 500
-        assert library.total_shows == 100
-        assert library.total_episodes == 5000
-        assert library.total_music == 200
-        assert library.total_storage == 2048.5
-
-    def test_from_dict_alternate_keys(self):
-        """Test using alternate key names."""
-        data = {"movies": 50, "shows": 10, "episodes": 500}
-        library = TracearrLibrary.from_dict(data)
-        assert library.total_movies == 50
-        assert library.total_shows == 10
-        assert library.total_episodes == 500
+        server = TracearrServer.from_dict(data)
+        assert server.status == "disconnected"
+        assert server.active_streams == 0
 
 
 class TestTracearrStatus:
     """Tests for TracearrStatus."""
 
-    def test_from_dict(self):
-        """Test creating status from dict."""
-        data = {"version": "1.2.3", "healthy": True}
-        status = TracearrStatus.from_dict(data)
-        assert status.version == "1.2.3"
-        assert status.healthy is True
-
     def test_from_dict_status_ok(self):
-        """Test healthy flag from status field."""
-        data = {"version": "1.0.0", "status": "ok"}
+        """Test healthy flag from /health status field."""
+        data = {"version": "1.5.0", "status": "ok"}
         status = TracearrStatus.from_dict(data)
+        assert status.version == "1.5.0"
         assert status.healthy is True
 
     def test_from_dict_status_not_ok(self):
         """Test healthy flag when status is not ok."""
-        data = {"version": "1.0.0", "status": "error"}
+        data = {"version": "1.5.0", "status": "degraded"}
         status = TracearrStatus.from_dict(data)
         assert status.healthy is False
+
+    def test_from_dict_healthy_explicit(self):
+        """Test explicit healthy flag."""
+        data = {"version": "2.0.0", "healthy": True}
+        status = TracearrStatus.from_dict(data)
+        assert status.healthy is True
 
 
 # --- API client tests ---
@@ -271,35 +234,54 @@ class TestTracearrClient:
             assert client.base_url == "http://tracearr.local:8080"
 
     async def test_get_status(self, mock_aioresponse):
-        """Test getting system status."""
+        """Test getting system status via /health."""
         mock_aioresponse.get(
-            f"{HOST}/api/status",
-            payload={"version": "2.0.0", "healthy": True},
+            f"{BASE}/health",
+            payload={
+                "status": "ok",
+                "version": "1.5.0",
+                "timestamp": "2026-01-01T00:00:00Z",
+                "servers": [],
+            },
         )
         async with aiohttp.ClientSession() as session:
             client = TracearrClient(
                 host=HOST, api_key=API_KEY, session=session, verify_ssl=False
             )
             status = await client.async_get_status()
-        assert status.version == "2.0.0"
+        assert status.version == "1.5.0"
         assert status.healthy is True
 
     async def test_get_sessions(self, mock_aioresponse):
-        """Test getting session/activity data."""
+        """Test getting session/activity data via /streams."""
         mock_aioresponse.get(
-            f"{HOST}/api/sessions",
+            f"{BASE}/streams",
             payload={
-                "stream_count": 2,
-                "transcode_count": 1,
-                "direct_play_count": 1,
-                "direct_stream_count": 0,
-                "total_bandwidth": 3000,
-                "lan_bandwidth": 2000,
-                "wan_bandwidth": 1000,
-                "sessions": [
-                    {"session_id": "s1", "user": "alice", "title": "Movie"},
-                    {"session_id": "s2", "user": "bob", "title": "Show"},
+                "data": [
+                    {
+                        "id": "s1",
+                        "username": "alice",
+                        "mediaTitle": "Movie",
+                        "mediaType": "movie",
+                        "state": "playing",
+                        "bitrate": 2000,
+                    },
+                    {
+                        "id": "s2",
+                        "username": "bob",
+                        "mediaTitle": "Show",
+                        "mediaType": "episode",
+                        "state": "playing",
+                        "bitrate": 1500,
+                    },
                 ],
+                "summary": {
+                    "total": 2,
+                    "transcodes": 1,
+                    "directPlays": 1,
+                    "directStreams": 0,
+                    "totalBitrate": "3.5 Mbps",
+                },
             },
         )
         async with aiohttp.ClientSession() as session:
@@ -311,33 +293,30 @@ class TestTracearrClient:
         assert activity.transcode_count == 1
         assert len(activity.sessions) == 2
         assert activity.sessions[0].user == "alice"
+        assert activity.total_bandwidth == 3500
 
     async def test_get_users(self, mock_aioresponse):
-        """Test getting users."""
+        """Test getting users via /users (paginated response)."""
         mock_aioresponse.get(
-            f"{HOST}/api/users",
-            payload=[
-                {"id": "1", "username": "alice", "trust_score": 90.0, "violations": 0},
-                {"id": "2", "username": "bob", "trust_score": 70.0, "violations": 3},
-            ],
-        )
-        async with aiohttp.ClientSession() as session:
-            client = TracearrClient(
-                host=HOST, api_key=API_KEY, session=session, verify_ssl=False
-            )
-            users = await client.async_get_users()
-        assert len(users) == 2
-        assert users[0].username == "alice"
-        assert users[1].violations == 3
-
-    async def test_get_users_nested(self, mock_aioresponse):
-        """Test getting users from nested response."""
-        mock_aioresponse.get(
-            f"{HOST}/api/users",
+            f"{BASE}/users",
             payload={
-                "users": [
-                    {"id": "1", "username": "carol"},
-                ]
+                "data": [
+                    {
+                        "id": "1",
+                        "username": "alice",
+                        "displayName": "Alice",
+                        "trustScore": 90.0,
+                        "totalViolations": 0,
+                    },
+                    {
+                        "id": "2",
+                        "username": "bob",
+                        "displayName": "Bob",
+                        "trustScore": 70.0,
+                        "totalViolations": 3,
+                    },
+                ],
+                "meta": {"total": 2, "page": 1, "pageSize": 25},
             },
         )
         async with aiohttp.ClientSession() as session:
@@ -345,22 +324,28 @@ class TestTracearrClient:
                 host=HOST, api_key=API_KEY, session=session, verify_ssl=False
             )
             users = await client.async_get_users()
-        assert len(users) == 1
-        assert users[0].username == "carol"
+        assert len(users) == 2
+        assert users[0].username == "Alice"
+        assert users[1].violations == 3
 
     async def test_get_servers(self, mock_aioresponse):
-        """Test getting servers."""
+        """Test getting servers from /health response."""
         mock_aioresponse.get(
-            f"{HOST}/api/servers",
-            payload=[
-                {
-                    "id": "s1",
-                    "name": "Plex",
-                    "type": "plex",
-                    "status": "connected",
-                    "url": "http://plex:32400",
-                },
-            ],
+            f"{BASE}/health",
+            payload={
+                "status": "ok",
+                "version": "1.5.0",
+                "timestamp": "2026-01-01T00:00:00Z",
+                "servers": [
+                    {
+                        "id": "s1",
+                        "name": "Plex",
+                        "type": "plex",
+                        "online": True,
+                        "activeStreams": 2,
+                    },
+                ],
+            },
         )
         async with aiohttp.ClientSession() as session:
             client = TracearrClient(
@@ -370,31 +355,12 @@ class TestTracearrClient:
         assert len(servers) == 1
         assert servers[0].name == "Plex"
         assert servers[0].status == "connected"
-
-    async def test_get_library(self, mock_aioresponse):
-        """Test getting library stats."""
-        mock_aioresponse.get(
-            f"{HOST}/api/library",
-            payload={
-                "total_movies": 1000,
-                "total_shows": 200,
-                "total_episodes": 10000,
-                "total_music": 500,
-                "total_storage": 4096.0,
-            },
-        )
-        async with aiohttp.ClientSession() as session:
-            client = TracearrClient(
-                host=HOST, api_key=API_KEY, session=session, verify_ssl=False
-            )
-            library = await client.async_get_library()
-        assert library.total_movies == 1000
-        assert library.total_shows == 200
+        assert servers[0].active_streams == 2
 
     async def test_authentication_error(self, mock_aioresponse):
         """Test authentication error on 401."""
         mock_aioresponse.get(
-            f"{HOST}/api/status",
+            f"{BASE}/health",
             status=401,
         )
         async with aiohttp.ClientSession() as session:
@@ -407,7 +373,7 @@ class TestTracearrClient:
     async def test_forbidden_error(self, mock_aioresponse):
         """Test authentication error on 403."""
         mock_aioresponse.get(
-            f"{HOST}/api/status",
+            f"{BASE}/health",
             status=403,
         )
         async with aiohttp.ClientSession() as session:
@@ -420,7 +386,7 @@ class TestTracearrClient:
     async def test_server_error(self, mock_aioresponse):
         """Test general error on 500."""
         mock_aioresponse.get(
-            f"{HOST}/api/status",
+            f"{BASE}/health",
             status=500,
         )
         async with aiohttp.ClientSession() as session:
@@ -433,7 +399,7 @@ class TestTracearrClient:
     async def test_connection_error(self, mock_aioresponse):
         """Test connection error."""
         mock_aioresponse.get(
-            f"{HOST}/api/status",
+            f"{BASE}/health",
             exception=aiohttp.ClientError("Connection refused"),
         )
         async with aiohttp.ClientSession() as session:

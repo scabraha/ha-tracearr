@@ -1,5 +1,7 @@
 # Tracearr Integration for Home Assistant
 
+![Tracearr](https://cdn.jsdelivr.net/gh/selfhst/icons@main/png/tracearr.png)
+
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
 A custom [Home Assistant](https://www.home-assistant.io/) integration for [Tracearr](https://docs.tracearr.com/) — a real-time monitoring, analytics, and account-sharing detection platform for Plex, Jellyfin, and Emby media servers.

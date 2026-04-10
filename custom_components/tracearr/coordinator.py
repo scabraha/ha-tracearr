@@ -149,9 +149,11 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
 
         self.pending_events = events
 
-        # --- Append to rolling activity log ---
-        for event_type, attrs in events:
-            self.activity_log.append(
-                {"event_type": event_type, "timestamp": now, **attrs}
-            )
-        self.activity_log = self.activity_log[-MAX_ACTIVITY_LOG_ENTRIES:]
+        # --- Append to rolling activity log (newest first) ---
+        new_entries = [
+            {"event_type": event_type, "timestamp": now, **attrs}
+            for event_type, attrs in events
+        ]
+        self.activity_log = (
+            list(reversed(new_entries)) + self.activity_log
+        )[:MAX_ACTIVITY_LOG_ENTRIES]

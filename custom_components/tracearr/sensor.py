@@ -223,7 +223,7 @@ class TracearrSensor(TracearrEntity, SensorEntity):
             if not self.coordinator.activity_log:
                 return None
             return {
-                "entries": list(reversed(self.coordinator.activity_log)),
+                "entries": self.coordinator.activity_log,
             }
         return None
 

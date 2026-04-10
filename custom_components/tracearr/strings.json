@@ -67,6 +67,9 @@
       "connected_servers": {
         "name": "Connected servers"
       },
+      "recent_activity": {
+        "name": "Recent activity"
+      },
       "server_status": {
         "name": "Status"
       },

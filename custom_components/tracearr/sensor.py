@@ -126,6 +126,15 @@ SENSOR_TYPES: tuple[TracearrSensorEntityDescription, ...] = (
             len(coord.servers) if coord.servers is not None else None
         ),
     ),
+    TracearrSensorEntityDescription(
+        key="recent_activity",
+        translation_key="recent_activity",
+        name="Recent activity",
+        icon="mdi:history",
+        native_unit_of_measurement="Events",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda coord: len(coord.activity_log),
+    ),
 )
 
 SERVER_SENSOR_TYPES: tuple[TracearrServerSensorEntityDescription, ...] = (
@@ -192,25 +201,31 @@ class TracearrSensor(TracearrEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, str | list] | None:
-        """Return extra state attributes for the active_streams sensor."""
-        if self.entity_description.key != "active_streams":
-            return None
-        if not self.coordinator.activity or not self.coordinator.activity.sessions:
-            return None
-        return {
-            "sessions": [
-                {
-                    "user": session.user,
-                    "title": session.title,
-                    "media_type": session.media_type,
-                    "state": session.state,
-                    "progress": session.progress,
-                    "quality": session.quality,
-                    "device": session.device,
-                }
-                for session in self.coordinator.activity.sessions
-            ]
-        }
+        """Return extra state attributes for sensors that provide detail."""
+        if self.entity_description.key == "active_streams":
+            if not self.coordinator.activity or not self.coordinator.activity.sessions:
+                return None
+            return {
+                "sessions": [
+                    {
+                        "user": session.user,
+                        "title": session.title,
+                        "media_type": session.media_type,
+                        "state": session.state,
+                        "progress": session.progress,
+                        "quality": session.quality,
+                        "device": session.device,
+                    }
+                    for session in self.coordinator.activity.sessions
+                ]
+            }
+        if self.entity_description.key == "recent_activity":
+            if not self.coordinator.activity_log:
+                return None
+            return {
+                "entries": self.coordinator.activity_log,
+            }
+        return None
 
 
 class TracearrServerSensor(TracearrEntity, SensorEntity):

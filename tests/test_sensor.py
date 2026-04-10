@@ -14,11 +14,12 @@ from custom_components.tracearr.sensor import SENSOR_TYPES, SERVER_SENSOR_TYPES
 class FakeCoordinator:
     """Fake coordinator for testing sensor value_fn callbacks."""
 
-    def __init__(self, activity=None, users=None, servers=None):
+    def __init__(self, activity=None, users=None, servers=None, activity_log=None):
         """Initialize with optional data."""
         self.activity = activity
         self.users = users
         self.servers = servers
+        self.activity_log = activity_log if activity_log is not None else []
 
 
 class TestSensorValueFunctions:
@@ -168,11 +169,39 @@ class TestSensorValueFunctions:
         sensor = self._get_sensor("connected_servers")
         assert sensor.value_fn(coord) == 2
 
+    def test_recent_activity(self, sample_activity, sample_users, sample_servers):
+        """Test recent_activity sensor value."""
+        log_entries = [
+            {"event_type": "stream_started", "user": "alice", "timestamp": "T1"},
+            {"event_type": "stream_ended", "user": "bob", "timestamp": "T2"},
+        ]
+        coord = FakeCoordinator(
+            activity=sample_activity,
+            users=sample_users,
+            servers=sample_servers,
+            activity_log=log_entries,
+        )
+        sensor = self._get_sensor("recent_activity")
+        assert sensor.value_fn(coord) == 2
+
+    def test_recent_activity_empty(self):
+        """Test recent_activity sensor value when no activity."""
+        coord = FakeCoordinator()
+        sensor = self._get_sensor("recent_activity")
+        assert sensor.value_fn(coord) == 0
+
     def test_sensors_return_none_when_no_data(self):
         """Test all sensors return None when coordinator has no data."""
         coord = FakeCoordinator()
         for sensor in SENSOR_TYPES:
-            assert sensor.value_fn(coord) is None, f"{sensor.key} should return None"
+            if sensor.key == "recent_activity":
+                assert sensor.value_fn(coord) == 0, (
+                    "recent_activity should return 0 with no data"
+                )
+            else:
+                assert sensor.value_fn(coord) is None, (
+                    f"{sensor.key} should return None"
+                )
 
     def test_all_sensor_keys_unique(self):
         """Test that all sensor keys are unique."""
@@ -196,7 +225,7 @@ class TestSensorValueFunctions:
 
     def test_expected_sensor_count(self):
         """Test that we have the expected number of sensors."""
-        assert len(SENSOR_TYPES) == 8
+        assert len(SENSOR_TYPES) == 9
 
     def test_all_sensors_have_icons(self):
         """Test that all sensors have an explicit icon set."""
@@ -209,6 +238,7 @@ class TestSensorValueFunctions:
             "total_users": "mdi:account-group",
             "active_violations": "mdi:shield-alert",
             "connected_servers": "mdi:server-network",
+            "recent_activity": "mdi:history",
         }
         for sensor in SENSOR_TYPES:
             assert sensor.icon is not None, f"Sensor '{sensor.key}' must have an icon"

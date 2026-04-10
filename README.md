@@ -65,6 +65,7 @@ This integration exposes sensors similar to the [Tautulli integration](https://w
 | **Active violations** | `mdi:shield-alert` | Sum of all user violations | Violations | — | ✅ |
 | **Total users** | `mdi:account-group` | Number of tracked users | Users | Diagnostic | ✅ |
 | **Connected servers** | `mdi:server-network` | Number of connected media servers | Servers | Diagnostic | ✅ |
+| **Recent activity** | `mdi:history` | Number of recent activity events (streams started/ended, violations) | Events | — | ✅ |
 
 ### Enabling Optional Sensors
 
@@ -102,6 +103,51 @@ sessions:
     quality: "4K"
     device: "Apple TV"
 ```
+
+### Recent Activity Attributes
+
+The **Recent activity** sensor maintains a rolling log (up to 25 entries) of detected activity events. The state value is the count of logged entries, and the `entries` attribute contains the full list (newest first):
+
+```yaml
+entries:
+  - event_type: "stream_started"
+    timestamp: "2025-01-15T20:30:00+00:00"
+    user: "alice"
+    title: "Inception"
+    media_type: "movie"
+    state: "playing"
+    device: "Chromecast"
+    quality: "1080p"
+    message: "alice started watching Inception on Chromecast (1080p)"
+  - event_type: "stream_ended"
+    timestamp: "2025-01-15T20:15:00+00:00"
+    session_id: "abc123"
+    user: "bob"
+    title: "Breaking Bad S01E01"
+    media_type: "episode"
+    device: "Apple TV"
+    quality: "4K"
+    message: "bob stopped watching Breaking Bad S01E01 on Apple TV (4K)"
+  - event_type: "violation_received"
+    timestamp: "2025-01-15T20:00:00+00:00"
+    user: "carol"
+    violations: 3
+    new_violations: 1
+    trust_score: 75.0
+    message: "carol received 1 new violation (total: 3, trust score: 75.0)"
+```
+
+### Events
+
+The integration fires Home Assistant events through an **Activity** event entity for real-time automation triggers. Each event includes detailed context:
+
+| Event Type | Description | Attributes |
+|---|---|---|
+| `stream_started` | A new stream has begun | `user`, `title`, `media_type`, `state`, `device`, `quality`, `message` |
+| `stream_ended` | A stream has stopped | `session_id`, `user`, `title`, `media_type`, `device`, `quality`, `message` |
+| `violation_received` | A user received new violation(s) | `user`, `violations`, `new_violations`, `trust_score`, `message` |
+
+Every event includes a human-readable `message` attribute (e.g., *"alice started watching Inception on Chromecast (1080p)"*) that you can use directly in notifications and automations via `{{ trigger.event.data.message }}`.
 
 ## Example Automations
 

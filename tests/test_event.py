@@ -15,9 +15,10 @@ class FakeCoordinator:
         """Initialize with optional data."""
         self.activity = activity
         self.users = users
-        self._previous_session_ids = None
+        self._previous_sessions = None
         self._previous_violations = None
         self.pending_events = []
+        self.activity_log = []
 
     def detect_events(self):
         """Run the change-detection logic (copied from the real coordinator)."""
@@ -52,7 +53,7 @@ class TestEventDetection:
         coord.detect_events()
 
         assert coord.pending_events == []
-        assert coord._previous_session_ids == {"s1"}
+        assert set(coord._previous_sessions) == {"s1"}
         assert coord._previous_violations == {"u1": 2}
 
     def test_new_session_fires_stream_started(self):
@@ -74,6 +75,7 @@ class TestEventDetection:
                     user="alice",
                     title="Inception",
                     media_type="movie",
+                    state="playing",
                     device="Chromecast",
                     quality="1080p",
                 ),
@@ -87,15 +89,26 @@ class TestEventDetection:
         assert attrs["user"] == "alice"
         assert attrs["title"] == "Inception"
         assert attrs["media_type"] == "movie"
+        assert attrs["state"] == "playing"
         assert attrs["device"] == "Chromecast"
         assert attrs["quality"] == "1080p"
+        assert (
+            attrs["message"] == "alice started watching Inception on Chromecast (1080p)"
+        )
 
     def test_removed_session_fires_stream_ended(self):
-        """Removed sessions should generate stream_ended events."""
+        """Removed sessions should generate stream_ended events with details."""
         coord = FakeCoordinator(
             activity=TracearrActivity(
                 sessions=[
-                    TracearrSessionData(session_id="s1", user="alice"),
+                    TracearrSessionData(
+                        session_id="s1",
+                        user="alice",
+                        title="Movie",
+                        media_type="movie",
+                        device="Roku",
+                        quality="4K",
+                    ),
                 ],
             ),
             users=[],
@@ -110,13 +123,24 @@ class TestEventDetection:
         event_type, attrs = coord.pending_events[0]
         assert event_type == "stream_ended"
         assert attrs["session_id"] == "s1"
+        assert attrs["user"] == "alice"
+        assert attrs["title"] == "Movie"
+        assert attrs["media_type"] == "movie"
+        assert attrs["device"] == "Roku"
+        assert attrs["quality"] == "4K"
+        assert attrs["message"] == "alice stopped watching Movie on Roku (4K)"
 
     def test_violation_increase_fires_violation_received(self):
         """Increased violation count should generate violation_received event."""
         coord = FakeCoordinator(
             activity=TracearrActivity(sessions=[]),
             users=[
-                TracearrUser(user_id="u1", username="bob", violations=1),
+                TracearrUser(
+                    user_id="u1",
+                    username="bob",
+                    violations=1,
+                    trust_score=90.0,
+                ),
             ],
         )
         coord.detect_events()
@@ -124,7 +148,12 @@ class TestEventDetection:
 
         # Increase violation count.
         coord.users = [
-            TracearrUser(user_id="u1", username="bob", violations=3),
+            TracearrUser(
+                user_id="u1",
+                username="bob",
+                violations=3,
+                trust_score=80.0,
+            ),
         ]
         coord.detect_events()
 
@@ -134,6 +163,11 @@ class TestEventDetection:
         assert attrs["user"] == "bob"
         assert attrs["violations"] == 3
         assert attrs["new_violations"] == 2
+        assert attrs["trust_score"] == 80.0
+        assert (
+            attrs["message"]
+            == "bob received 2 new violations (total: 3, trust score: 80.0)"
+        )
 
     def test_violation_same_count_no_event(self):
         """Same violation count should not generate events."""
@@ -174,7 +208,12 @@ class TestEventDetection:
         coord.detect_events()
 
         coord.users = [
-            TracearrUser(user_id="u1", username="carol", violations=2),
+            TracearrUser(
+                user_id="u1",
+                username="carol",
+                violations=2,
+                trust_score=75.0,
+            ),
         ]
         coord.detect_events()
 
@@ -183,6 +222,9 @@ class TestEventDetection:
         assert event_type == "violation_received"
         assert attrs["user"] == "carol"
         assert attrs["new_violations"] == 2
+        assert attrs["trust_score"] == 75.0
+        assert "message" in attrs
+        assert "carol" in attrs["message"]
 
     def test_multiple_events_in_single_update(self):
         """Multiple changes in one update should produce multiple events."""
@@ -240,7 +282,65 @@ class TestEventDetection:
             users=[],
         )
         coord.detect_events()
-        assert coord._previous_session_ids == set()
+        assert set(coord._previous_sessions) == set()
+
+    def test_activity_log_populated(self):
+        """Activity log should accumulate entries from detected events."""
+        coord = FakeCoordinator(
+            activity=TracearrActivity(sessions=[]),
+            users=[],
+        )
+        coord.detect_events()
+        assert coord.activity_log == []
+
+        coord.activity = TracearrActivity(
+            stream_count=1,
+            sessions=[
+                TracearrSessionData(
+                    session_id="s1",
+                    user="alice",
+                    title="Movie",
+                    media_type="movie",
+                ),
+            ],
+        )
+        coord.detect_events()
+
+        assert len(coord.activity_log) == 1
+        entry = coord.activity_log[0]
+        assert entry["event_type"] == "stream_started"
+        assert entry["user"] == "alice"
+        assert entry["title"] == "Movie"
+        assert "timestamp" in entry
+        assert "message" in entry
+        assert "alice" in entry["message"]
+        assert "Movie" in entry["message"]
+
+    def test_activity_log_capped(self):
+        """Activity log should not exceed MAX_ACTIVITY_LOG_ENTRIES."""
+        from custom_components.tracearr.coordinator import MAX_ACTIVITY_LOG_ENTRIES
+
+        coord = FakeCoordinator(
+            activity=TracearrActivity(sessions=[]),
+            users=[],
+        )
+        coord.detect_events()
+
+        # Generate more than MAX entries by repeatedly adding/removing sessions.
+        for i in range(MAX_ACTIVITY_LOG_ENTRIES + 10):
+            coord.activity = TracearrActivity(
+                sessions=[
+                    TracearrSessionData(
+                        session_id=f"s{i}",
+                        user="alice",
+                        title=f"Movie {i}",
+                        media_type="movie",
+                    ),
+                ],
+            )
+            coord.detect_events()
+
+        assert len(coord.activity_log) <= MAX_ACTIVITY_LOG_ENTRIES
 
 
 class TestEventEntityDefinition:
@@ -255,3 +355,41 @@ class TestEventEntityDefinition:
     def test_event_types_count(self):
         """Test the number of event types."""
         assert len(EVENT_TYPES) == 3
+
+
+class TestStreamMessage:
+    """Tests for the _stream_message helper."""
+
+    def test_full_message(self):
+        """Test message with all fields populated."""
+        from custom_components.tracearr.coordinator import _stream_message
+
+        session = TracearrSessionData(
+            user="alice", title="Inception", device="Chromecast", quality="1080p"
+        )
+        msg = _stream_message("started watching", session)
+        assert msg == "alice started watching Inception on Chromecast (1080p)"
+
+    def test_no_device_no_quality(self):
+        """Test message when device and quality are empty."""
+        from custom_components.tracearr.coordinator import _stream_message
+
+        session = TracearrSessionData(user="bob", title="Movie")
+        msg = _stream_message("stopped watching", session)
+        assert msg == "bob stopped watching Movie"
+
+    def test_no_user(self):
+        """Test message when user is empty."""
+        from custom_components.tracearr.coordinator import _stream_message
+
+        session = TracearrSessionData(title="Movie")
+        msg = _stream_message("started watching", session)
+        assert msg == "Unknown user started watching Movie"
+
+    def test_no_title(self):
+        """Test message when title is empty."""
+        from custom_components.tracearr.coordinator import _stream_message
+
+        session = TracearrSessionData(user="alice", device="Roku")
+        msg = _stream_message("started watching", session)
+        assert msg == "alice started watching on Roku"

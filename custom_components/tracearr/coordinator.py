@@ -28,6 +28,18 @@ type TracearrConfigEntry = ConfigEntry[TracearrDataUpdateCoordinator]
 MAX_ACTIVITY_LOG_ENTRIES = 25
 
 
+def _stream_message(verb: str, session: TracearrSessionData) -> str:
+    """Build a human-readable message for a stream event."""
+    parts = [session.user or "Unknown user", verb]
+    if session.title:
+        parts.append(session.title)
+    if session.device:
+        parts.append(f"on {session.device}")
+    if session.quality:
+        parts.append(f"({session.quality})")
+    return " ".join(parts)
+
+
 class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
     """Data update coordinator for the Tracearr integration."""
 
@@ -103,6 +115,7 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
                             "state": session.state,
                             "device": session.device,
                             "quality": session.quality,
+                            "message": _stream_message("started watching", session),
                         },
                     )
                 )
@@ -118,6 +131,9 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
                             "media_type": prev_session.media_type,
                             "device": prev_session.device,
                             "quality": prev_session.quality,
+                            "message": _stream_message(
+                                "stopped watching", prev_session
+                            ),
                         },
                     )
                 )
@@ -131,14 +147,21 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
             for uid, user in current_violations.items():
                 prev_count = self._previous_violations.get(uid, 0)
                 if user.violations > prev_count:
+                    new_count = user.violations - prev_count
                     events.append(
                         (
                             "violation_received",
                             {
                                 "user": user.username,
                                 "violations": user.violations,
-                                "new_violations": user.violations - prev_count,
+                                "new_violations": new_count,
                                 "trust_score": user.trust_score,
+                                "message": (
+                                    f"{user.username} received {new_count} new "
+                                    f"violation{'s' if new_count != 1 else ''} "
+                                    f"(total: {user.violations}, "
+                                    f"trust score: {user.trust_score})"
+                                ),
                             },
                         )
                     )
@@ -154,6 +177,6 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
             {"event_type": event_type, "timestamp": now, **attrs}
             for event_type, attrs in events
         ]
-        self.activity_log = (
-            list(reversed(new_entries)) + self.activity_log
-        )[:MAX_ACTIVITY_LOG_ENTRIES]
+        self.activity_log = (list(reversed(new_entries)) + self.activity_log)[
+            :MAX_ACTIVITY_LOG_ENTRIES
+        ]

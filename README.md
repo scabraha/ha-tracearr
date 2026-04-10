@@ -118,6 +118,7 @@ entries:
     state: "playing"
     device: "Chromecast"
     quality: "1080p"
+    message: "alice started watching Inception on Chromecast (1080p)"
   - event_type: "stream_ended"
     timestamp: "2025-01-15T20:15:00+00:00"
     session_id: "abc123"
@@ -126,12 +127,14 @@ entries:
     media_type: "episode"
     device: "Apple TV"
     quality: "4K"
+    message: "bob stopped watching Breaking Bad S01E01 on Apple TV (4K)"
   - event_type: "violation_received"
     timestamp: "2025-01-15T20:00:00+00:00"
     user: "carol"
     violations: 3
     new_violations: 1
     trust_score: 75.0
+    message: "carol received 1 new violation (total: 3, trust score: 75.0)"
 ```
 
 ### Events
@@ -140,9 +143,11 @@ The integration fires Home Assistant events through an **Activity** event entity
 
 | Event Type | Description | Attributes |
 |---|---|---|
-| `stream_started` | A new stream has begun | `user`, `title`, `media_type`, `state`, `device`, `quality` |
-| `stream_ended` | A stream has stopped | `session_id`, `user`, `title`, `media_type`, `device`, `quality` |
-| `violation_received` | A user received new violation(s) | `user`, `violations`, `new_violations`, `trust_score` |
+| `stream_started` | A new stream has begun | `user`, `title`, `media_type`, `state`, `device`, `quality`, `message` |
+| `stream_ended` | A stream has stopped | `session_id`, `user`, `title`, `media_type`, `device`, `quality`, `message` |
+| `violation_received` | A user received new violation(s) | `user`, `violations`, `new_violations`, `trust_score`, `message` |
+
+Every event includes a human-readable `message` attribute (e.g., *"alice started watching Inception on Chromecast (1080p)"*) that you can use directly in notifications and automations via `{{ trigger.event.data.message }}`.
 
 ## Example Automations
 

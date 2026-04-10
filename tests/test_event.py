@@ -92,6 +92,9 @@ class TestEventDetection:
         assert attrs["state"] == "playing"
         assert attrs["device"] == "Chromecast"
         assert attrs["quality"] == "1080p"
+        assert (
+            attrs["message"] == "alice started watching Inception on Chromecast (1080p)"
+        )
 
     def test_removed_session_fires_stream_ended(self):
         """Removed sessions should generate stream_ended events with details."""
@@ -125,6 +128,7 @@ class TestEventDetection:
         assert attrs["media_type"] == "movie"
         assert attrs["device"] == "Roku"
         assert attrs["quality"] == "4K"
+        assert attrs["message"] == "alice stopped watching Movie on Roku (4K)"
 
     def test_violation_increase_fires_violation_received(self):
         """Increased violation count should generate violation_received event."""
@@ -160,6 +164,10 @@ class TestEventDetection:
         assert attrs["violations"] == 3
         assert attrs["new_violations"] == 2
         assert attrs["trust_score"] == 80.0
+        assert (
+            attrs["message"]
+            == "bob received 2 new violations (total: 3, trust score: 80.0)"
+        )
 
     def test_violation_same_count_no_event(self):
         """Same violation count should not generate events."""
@@ -215,6 +223,8 @@ class TestEventDetection:
         assert attrs["user"] == "carol"
         assert attrs["new_violations"] == 2
         assert attrs["trust_score"] == 75.0
+        assert "message" in attrs
+        assert "carol" in attrs["message"]
 
     def test_multiple_events_in_single_update(self):
         """Multiple changes in one update should produce multiple events."""
@@ -302,6 +312,9 @@ class TestEventDetection:
         assert entry["user"] == "alice"
         assert entry["title"] == "Movie"
         assert "timestamp" in entry
+        assert "message" in entry
+        assert "alice" in entry["message"]
+        assert "Movie" in entry["message"]
 
     def test_activity_log_capped(self):
         """Activity log should not exceed MAX_ACTIVITY_LOG_ENTRIES."""
@@ -342,3 +355,41 @@ class TestEventEntityDefinition:
     def test_event_types_count(self):
         """Test the number of event types."""
         assert len(EVENT_TYPES) == 3
+
+
+class TestStreamMessage:
+    """Tests for the _stream_message helper."""
+
+    def test_full_message(self):
+        """Test message with all fields populated."""
+        from custom_components.tracearr.coordinator import _stream_message
+
+        session = TracearrSessionData(
+            user="alice", title="Inception", device="Chromecast", quality="1080p"
+        )
+        msg = _stream_message("started watching", session)
+        assert msg == "alice started watching Inception on Chromecast (1080p)"
+
+    def test_no_device_no_quality(self):
+        """Test message when device and quality are empty."""
+        from custom_components.tracearr.coordinator import _stream_message
+
+        session = TracearrSessionData(user="bob", title="Movie")
+        msg = _stream_message("stopped watching", session)
+        assert msg == "bob stopped watching Movie"
+
+    def test_no_user(self):
+        """Test message when user is empty."""
+        from custom_components.tracearr.coordinator import _stream_message
+
+        session = TracearrSessionData(title="Movie")
+        msg = _stream_message("started watching", session)
+        assert msg == "Unknown user started watching Movie"
+
+    def test_no_title(self):
+        """Test message when title is empty."""
+        from custom_components.tracearr.coordinator import _stream_message
+
+        session = TracearrSessionData(user="alice", device="Roku")
+        msg = _stream_message("started watching", session)
+        assert msg == "alice started watching on Roku"

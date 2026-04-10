@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import (
     TracearrActivity,
@@ -17,11 +18,14 @@ from .api import (
     TracearrClient,
     TracearrConnectionError,
     TracearrServer,
+    TracearrSessionData,
     TracearrUser,
 )
 from .const import DOMAIN, LOGGER
 
 type TracearrConfigEntry = ConfigEntry[TracearrDataUpdateCoordinator]
+
+MAX_ACTIVITY_LOG_ENTRIES = 25
 
 
 class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
@@ -49,9 +53,10 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
         self.servers: list[TracearrServer] | None = None
 
         # Change-detection state for event entities.
-        self._previous_session_ids: set[str] | None = None
+        self._previous_sessions: dict[str, TracearrSessionData] | None = None
         self._previous_violations: dict[str, int] | None = None
         self.pending_events: list[tuple[str, dict[str, Any]]] = []
+        self.activity_log: list[dict[str, Any]] = []
 
     async def _async_update_data(self) -> None:
         """Get the latest data from Tracearr."""
@@ -74,6 +79,7 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
     def detect_events(self) -> None:
         """Compare current data with previous state and queue events."""
         events: list[tuple[str, dict[str, Any]]] = []
+        now = dt_util.utcnow().isoformat()
 
         # --- Session change detection ---
         current_sessions = {
@@ -83,8 +89,9 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
         }
         current_ids = set(current_sessions)
 
-        if self._previous_session_ids is not None:
-            for sid in current_ids - self._previous_session_ids:
+        if self._previous_sessions is not None:
+            previous_ids = set(self._previous_sessions)
+            for sid in current_ids - previous_ids:
                 session = current_sessions[sid]
                 events.append(
                     (
@@ -93,20 +100,29 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
                             "user": session.user,
                             "title": session.title,
                             "media_type": session.media_type,
+                            "state": session.state,
                             "device": session.device,
                             "quality": session.quality,
                         },
                     )
                 )
-            for sid in self._previous_session_ids - current_ids:
+            for sid in previous_ids - current_ids:
+                prev_session = self._previous_sessions[sid]
                 events.append(
                     (
                         "stream_ended",
-                        {"session_id": sid},
+                        {
+                            "session_id": sid,
+                            "user": prev_session.user,
+                            "title": prev_session.title,
+                            "media_type": prev_session.media_type,
+                            "device": prev_session.device,
+                            "quality": prev_session.quality,
+                        },
                     )
                 )
 
-        self._previous_session_ids = current_ids
+        self._previous_sessions = dict(current_sessions)
 
         # --- Violation change detection ---
         current_violations = {u.user_id: u for u in (self.users or []) if u.user_id}
@@ -122,6 +138,7 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
                                 "user": user.username,
                                 "violations": user.violations,
                                 "new_violations": user.violations - prev_count,
+                                "trust_score": user.trust_score,
                             },
                         )
                     )
@@ -131,3 +148,10 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
         }
 
         self.pending_events = events
+
+        # --- Append to rolling activity log ---
+        for event_type, attrs in events:
+            self.activity_log.append(
+                {"event_type": event_type, "timestamp": now, **attrs}
+            )
+        self.activity_log = self.activity_log[-MAX_ACTIVITY_LOG_ENTRIES:]

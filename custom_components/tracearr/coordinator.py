@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -47,6 +48,11 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
         self.users: list[TracearrUser] | None = None
         self.servers: list[TracearrServer] | None = None
 
+        # Change-detection state for event entities.
+        self._previous_session_ids: set[str] | None = None
+        self._previous_violations: dict[str, int] | None = None
+        self.pending_events: list[tuple[str, dict[str, Any]]] = []
+
     async def _async_update_data(self) -> None:
         """Get the latest data from Tracearr."""
         try:
@@ -62,3 +68,66 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
             raise UpdateFailed(ex) from ex
         except TracearrAuthenticationError as ex:
             raise ConfigEntryAuthFailed(ex) from ex
+
+        self.detect_events()
+
+    def detect_events(self) -> None:
+        """Compare current data with previous state and queue events."""
+        events: list[tuple[str, dict[str, Any]]] = []
+
+        # --- Session change detection ---
+        current_sessions = {
+            s.session_id: s
+            for s in (self.activity.sessions if self.activity else [])
+            if s.session_id
+        }
+        current_ids = set(current_sessions)
+
+        if self._previous_session_ids is not None:
+            for sid in current_ids - self._previous_session_ids:
+                session = current_sessions[sid]
+                events.append(
+                    (
+                        "stream_started",
+                        {
+                            "user": session.user,
+                            "title": session.title,
+                            "media_type": session.media_type,
+                            "device": session.device,
+                            "quality": session.quality,
+                        },
+                    )
+                )
+            for sid in self._previous_session_ids - current_ids:
+                events.append(
+                    (
+                        "stream_ended",
+                        {"session_id": sid},
+                    )
+                )
+
+        self._previous_session_ids = current_ids
+
+        # --- Violation change detection ---
+        current_violations = {u.user_id: u for u in (self.users or []) if u.user_id}
+
+        if self._previous_violations is not None:
+            for uid, user in current_violations.items():
+                prev_count = self._previous_violations.get(uid, 0)
+                if user.violations > prev_count:
+                    events.append(
+                        (
+                            "violation_received",
+                            {
+                                "user": user.username,
+                                "violations": user.violations,
+                                "new_violations": user.violations - prev_count,
+                            },
+                        )
+                    )
+
+        self._previous_violations = {
+            uid: u.violations for uid, u in current_violations.items()
+        }
+
+        self.pending_events = events

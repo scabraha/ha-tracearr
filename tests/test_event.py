@@ -9,7 +9,7 @@ from custom_components.tracearr.event import EVENT_TYPES
 
 
 class FakeCoordinator:
-    """Minimal fake coordinator for testing _detect_events logic."""
+    """Minimal fake coordinator for testing detect_events logic."""
 
     def __init__(self, activity=None, users=None):
         """Initialize with optional data."""
@@ -19,13 +19,13 @@ class FakeCoordinator:
         self._previous_violations = None
         self.pending_events = []
 
-    def _detect_events(self):
+    def detect_events(self):
         """Run the change-detection logic (copied from the real coordinator)."""
         from custom_components.tracearr.coordinator import (
             TracearrDataUpdateCoordinator,
         )
 
-        TracearrDataUpdateCoordinator._detect_events(self)
+        TracearrDataUpdateCoordinator.detect_events(self)
 
 
 class TestEventDetection:
@@ -49,7 +49,7 @@ class TestEventDetection:
                 TracearrUser(user_id="u1", username="alice", violations=2),
             ],
         )
-        coord._detect_events()
+        coord.detect_events()
 
         assert coord.pending_events == []
         assert coord._previous_session_ids == {"s1"}
@@ -62,7 +62,7 @@ class TestEventDetection:
             users=[],
         )
         # Seed initial state.
-        coord._detect_events()
+        coord.detect_events()
         assert coord.pending_events == []
 
         # Add a new session.
@@ -79,7 +79,7 @@ class TestEventDetection:
                 ),
             ],
         )
-        coord._detect_events()
+        coord.detect_events()
 
         assert len(coord.pending_events) == 1
         event_type, attrs = coord.pending_events[0]
@@ -100,11 +100,11 @@ class TestEventDetection:
             ),
             users=[],
         )
-        coord._detect_events()
+        coord.detect_events()
 
         # Remove the session.
         coord.activity = TracearrActivity(sessions=[])
-        coord._detect_events()
+        coord.detect_events()
 
         assert len(coord.pending_events) == 1
         event_type, attrs = coord.pending_events[0]
@@ -119,14 +119,14 @@ class TestEventDetection:
                 TracearrUser(user_id="u1", username="bob", violations=1),
             ],
         )
-        coord._detect_events()
+        coord.detect_events()
         assert coord.pending_events == []
 
         # Increase violation count.
         coord.users = [
             TracearrUser(user_id="u1", username="bob", violations=3),
         ]
-        coord._detect_events()
+        coord.detect_events()
 
         assert len(coord.pending_events) == 1
         event_type, attrs = coord.pending_events[0]
@@ -143,8 +143,8 @@ class TestEventDetection:
                 TracearrUser(user_id="u1", username="bob", violations=3),
             ],
         )
-        coord._detect_events()
-        coord._detect_events()
+        coord.detect_events()
+        coord.detect_events()
 
         assert coord.pending_events == []
 
@@ -156,12 +156,12 @@ class TestEventDetection:
                 TracearrUser(user_id="u1", username="bob", violations=5),
             ],
         )
-        coord._detect_events()
+        coord.detect_events()
 
         coord.users = [
             TracearrUser(user_id="u1", username="bob", violations=3),
         ]
-        coord._detect_events()
+        coord.detect_events()
 
         assert coord.pending_events == []
 
@@ -171,12 +171,12 @@ class TestEventDetection:
             activity=TracearrActivity(sessions=[]),
             users=[],
         )
-        coord._detect_events()
+        coord.detect_events()
 
         coord.users = [
             TracearrUser(user_id="u1", username="carol", violations=2),
         ]
-        coord._detect_events()
+        coord.detect_events()
 
         assert len(coord.pending_events) == 1
         event_type, attrs = coord.pending_events[0]
@@ -196,7 +196,7 @@ class TestEventDetection:
                 TracearrUser(user_id="u1", username="bob", violations=0),
             ],
         )
-        coord._detect_events()
+        coord.detect_events()
 
         # s1 ends, s2 starts, bob gets a violation.
         coord.activity = TracearrActivity(
@@ -212,7 +212,7 @@ class TestEventDetection:
         coord.users = [
             TracearrUser(user_id="u1", username="bob", violations=1),
         ]
-        coord._detect_events()
+        coord.detect_events()
 
         event_types = [e[0] for e in coord.pending_events]
         assert "stream_started" in event_types
@@ -223,10 +223,10 @@ class TestEventDetection:
     def test_no_activity_data(self):
         """None activity should not crash."""
         coord = FakeCoordinator(activity=None, users=None)
-        coord._detect_events()
+        coord.detect_events()
         assert coord.pending_events == []
 
-        coord._detect_events()
+        coord.detect_events()
         assert coord.pending_events == []
 
     def test_empty_session_id_ignored(self):
@@ -239,7 +239,7 @@ class TestEventDetection:
             ),
             users=[],
         )
-        coord._detect_events()
+        coord.detect_events()
         assert coord._previous_session_ids == set()
 
 

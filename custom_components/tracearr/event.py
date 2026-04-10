@@ -33,7 +33,6 @@ class TracearrActivityEvent(TracearrEntity, EventEntity):
     _attr_translation_key = "activity"
     _attr_event_types = EVENT_TYPES
     _attr_icon = "mdi:history"
-    _attr_name = "Activity"
 
     def __init__(self, coordinator: TracearrDataUpdateCoordinator) -> None:
         """Initialize the event entity."""

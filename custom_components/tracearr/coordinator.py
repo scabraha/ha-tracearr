@@ -69,9 +69,9 @@ class TracearrDataUpdateCoordinator(DataUpdateCoordinator[None]):
         except TracearrAuthenticationError as ex:
             raise ConfigEntryAuthFailed(ex) from ex
 
-        self._detect_events()
+        self.detect_events()
 
-    def _detect_events(self) -> None:
+    def detect_events(self) -> None:
         """Compare current data with previous state and queue events."""
         events: list[tuple[str, dict[str, Any]]] = []
 
